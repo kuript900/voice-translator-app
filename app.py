@@ -1,44 +1,57 @@
 import streamlit as st
 from gtts import gTTS
-from deep_translator import GoogleTranslator  # または MyMemoryTranslator に変更可能
+from deep_translator import MyMemoryTranslator
 from io import BytesIO
 import base64
 
-st.markdown("<h3>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
+# タイトル（少し小さめ）
+st.markdown("<h3 style='text-align: center;'>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
 
+# 入力エリア
 text = st.text_area("しゃべらせたい日本語を入力してください")
+
+# リピート回数
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
 
+# 実行ボタン
 if st.button("英語で音声を作る"):
     if text:
-        translated_text = GoogleTranslator(source='ja', target='en').translate(text)
-        st.write("翻訳：", translated_text)
+        try:
+            # 安定した翻訳APIを使用（MyMemoryTranslator）
+            translated_text = MyMemoryTranslator(source='ja', target='en').translate(text)
+            st.write("翻訳：", translated_text)
 
-        tts = gTTS(translated_text, lang='en')
-        mp3_fp = BytesIO()
-        tts.write_to_fp(mp3_fp)
-        mp3_fp.seek(0)
-        audio_data = mp3_fp.read()
-        audio_base64 = base64.b64encode(audio_data).decode()
+            # 音声を生成
+            tts = gTTS(translated_text, lang='en')
+            mp3_fp = BytesIO()
+            tts.write_to_fp(mp3_fp)
+            mp3_fp.seek(0)
+            audio_data = mp3_fp.read()
+            audio_base64 = base64.b64encode(audio_data).decode()
 
-        js_code = f"""
-        <script>
-        var count = 0;
-        var maxCount = {repeat_count};
-        var audio = new Audio("data:audio/mp3;base64,{audio_base64}");
-        audio.play();
-        audio.onended = function() {{
-            count++;
-            if(count < maxCount) {{
-                audio.currentTime = 0;
-                audio.play();
-            }}
-        }};
-        </script>
-        """
+            # 音声プレイヤー
+            st.audio(audio_data, format="audio/mp3")
 
-        st.audio(audio_data, format="audio/mp3")
-        st.components.v1.html(js_code)
+            # JavaScript で指定回数だけ自動再生
+            js_code = f"""
+            <script>
+            var count = 0;
+            var maxCount = {repeat_count};
+            var audio = new Audio("data:audio/mp3;base64,{audio_base64}");
+            audio.play();
+            audio.onended = function() {{
+                count++;
+                if(count < maxCount) {{
+                    audio.currentTime = 0;
+                    audio.play();
+                }}
+            }};
+            </script>
+            """
+            st.components.v1.html(js_code)
+        except Exception as e:
+            st.error("エラーが発生しました。")
+            st.exception(e)
     else:
         st.warning("日本語を入力してください。")
 
