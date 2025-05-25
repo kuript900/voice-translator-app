@@ -6,7 +6,7 @@ import base64
 
 st.markdown("<h3 style='text-align: center;'>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
 
-text = st.text_area("しゃべらせたい日本語を入力してください")
+text = st.text_area("英語になおしたい日本語を入力してください")
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1)
 
 if st.button("英語で音声を作る"):
