@@ -1,10 +1,10 @@
 import streamlit as st
 from gtts import gTTS
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator  # または MyMemoryTranslator に変更可能
 from io import BytesIO
 import base64
 
-st.title("翻訳付き音声作成アプリ")
+st.markdown("<h3>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
 
 text = st.text_area("しゃべらせたい日本語を入力してください")
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
@@ -40,5 +40,6 @@ if st.button("英語で音声を作る"):
         st.audio(audio_data, format="audio/mp3")
         st.components.v1.html(js_code)
     else:
+        st.warning("日本語を入力してください。")
 
 
