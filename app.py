@@ -4,6 +4,12 @@ from deep_translator import GoogleTranslator
 from io import BytesIO
 import base64
 
+st.set_page_config(
+    page_title="翻訳付き音声作成アプリ",
+    layout="centered",  # ← スマホに合わせて中央寄せ
+    initial_sidebar_state="collapsed"
+)
+
 st.title("翻訳付き音声作成アプリ")
 
 text = st.text_area("しゃべらせたい日本語を入力してください")
