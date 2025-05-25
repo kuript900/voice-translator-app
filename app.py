@@ -4,24 +4,24 @@ from deep_translator import MyMemoryTranslator
 from io import BytesIO
 import base64
 
-# タイトル（少し小さめ）
+# 小さめのタイトル
 st.markdown("<h3 style='text-align: center;'>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
 
-# 入力エリア
+# 入力欄
 text = st.text_area("しゃべらせたい日本語を入力してください")
 
-# リピート回数
+# リピート回数入力
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
 
-# 実行ボタン
+# ボタンを押したときの処理
 if st.button("英語で音声を作る"):
     if text:
         try:
-            # 安定した翻訳APIを使用（MyMemoryTranslator）
+            # 翻訳（MyMemory を使用）
             translated_text = MyMemoryTranslator(source='ja', target='en').translate(text)
             st.write("翻訳：", translated_text)
 
-            # 音声を生成
+            # 音声生成
             tts = gTTS(translated_text, lang='en')
             mp3_fp = BytesIO()
             tts.write_to_fp(mp3_fp)
@@ -29,10 +29,10 @@ if st.button("英語で音声を作る"):
             audio_data = mp3_fp.read()
             audio_base64 = base64.b64encode(audio_data).decode()
 
-            # 音声プレイヤー
-            st.audio(audio_data, format="audio/mp3")
+            # プレイヤー表示
+            st.audio(audio_data, format='audio/mp3')
 
-            # JavaScript で指定回数だけ自動再生
+            # 自動再生＋回数制御のJS
             js_code = f"""
             <script>
             var count = 0;
@@ -49,10 +49,12 @@ if st.button("英語で音声を作る"):
             </script>
             """
             st.components.v1.html(js_code)
+
         except Exception as e:
-            st.error("エラーが発生しました。")
+            st.error("翻訳または音声作成中にエラーが発生しました。")
             st.exception(e)
     else:
         st.warning("日本語を入力してください。")
+
 
 
