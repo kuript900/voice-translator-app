@@ -1,32 +1,38 @@
 import streamlit as st
 from gtts import gTTS
-from deep_translator import GoogleTranslator
+from googletrans import Translator
 from io import BytesIO
 import base64
 
-st.set_page_config(
-    page_title="翻訳付き音声作成アプリ",
-    layout="centered",  # ← スマホに合わせて中央寄せ
-    initial_sidebar_state="collapsed"
-)
+# ページ設定（スマホ表示に適した中央寄せ）
+st.set_page_config(page_title="翻訳付き音声作成アプリ", layout="centered")
 
-st.title("翻訳付き音声作成アプリ")
+# スマホ対応のタイトル表示
+st.markdown("""
+    <h1 style='font-size:28px; text-align:center;'>翻訳付き音声作成アプリ</h1>
+""", unsafe_allow_html=True)
 
+# 入力フォーム
 text = st.text_area("英語にしたい日本語を入力してください")
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
 
+# ボタンを押したら実行
 if st.button("英語で音声を作る"):
     if text:
-        translated_text = GoogleTranslator(source='ja', target='en').translate(text)
-        st.write("翻訳：", translated_text)
+        # 翻訳
+        translator = Translator()
+        translated = translator.translate(text, src='ja', dest='en')
+        st.write("翻訳：", translated.text)
 
-        tts = gTTS(translated_text, lang='en')
+        # 音声生成
+        tts = gTTS(translated.text, lang='en')
         mp3_fp = BytesIO()
         tts.write_to_fp(mp3_fp)
         mp3_fp.seek(0)
         audio_data = mp3_fp.read()
         audio_base64 = base64.b64encode(audio_data).decode()
 
+        # JavaScriptで自動リピート再生
         js_code = f"""
         <script>
         var count = 0;
@@ -43,9 +49,13 @@ if st.button("英語で音声を作る"):
         </script>
         """
 
+        # 音声プレイヤー
         st.audio(audio_data, format="audio/mp3")
+
+        # JavaScript 埋め込み
         st.components.v1.html(js_code)
     else:
         st.warning("日本語を入力してください。")
+
 
 
