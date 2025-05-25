@@ -11,18 +11,16 @@ repeat_count = st.number_input("リピート回数（自動再生）", min_value
 
 if st.button("英語で音声を作る"):
     if text:
-        translated = GoogleTranslator(source='ja', target='en').translate(text)
-        st.write("翻訳：", translated)
+        translated_text = GoogleTranslator(source='ja', target='en').translate(text)
+        st.write("翻訳：", translated_text)
 
-        # 音声生成
-        tts = gTTS(translated, lang='en')
+        tts = gTTS(translated_text, lang='en')
         mp3_fp = BytesIO()
         tts.write_to_fp(mp3_fp)
         mp3_fp.seek(0)
         audio_data = mp3_fp.read()
         audio_base64 = base64.b64encode(audio_data).decode()
 
-        # JavaScript でリピート再生
         js_code = f"""
         <script>
         var count = 0;
@@ -43,6 +41,4 @@ if st.button("英語で音声を作る"):
         st.components.v1.html(js_code)
     else:
         st.warning("日本語を入力してください。")
-
-
 
