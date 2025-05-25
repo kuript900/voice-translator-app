@@ -1,6 +1,6 @@
 import streamlit as st
 from gtts import gTTS
-from googletrans import Translator
+from google_trans_new import google_translator
 from io import BytesIO
 import base64
 
@@ -11,12 +11,13 @@ repeat_count = st.number_input("リピート回数（自動再生）", min_value
 
 if st.button("英語で音声を作る"):
     if text:
-        translator = Translator()
-        translated = translator.translate(text, src='ja', dest='en')
-        st.write("翻訳：", translated.text)
+        # 翻訳（google_trans_new を使用）
+        translator = google_translator()
+        translated = translator.translate(text, lang_src='ja', lang_tgt='en')
+        st.write("翻訳：", translated)
 
         # 音声生成
-        tts = gTTS(translated.text, lang='en')
+        tts = gTTS(translated, lang='en')
         mp3_fp = BytesIO()
         tts.write_to_fp(mp3_fp)
         mp3_fp.seek(0)
@@ -40,11 +41,12 @@ if st.button("英語で音声を作る"):
         </script>
         """
 
-        # プレイヤー表示（念のため）
+        # 音声プレイヤー（手動再生用）
         st.audio(audio_data, format="audio/mp3")
 
-        # JS 埋め込み
+        # 自動再生スクリプトの埋め込み
         st.components.v1.html(js_code)
     else:
         st.warning("日本語を入力してください。")
+
 
