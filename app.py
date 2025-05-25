@@ -4,27 +4,25 @@ from googletrans import Translator
 from io import BytesIO
 import base64
 
-# ページ設定（スマホ表示に適した中央寄せ）
+# ページ設定（スマホ対応）
 st.set_page_config(page_title="翻訳付き音声作成アプリ", layout="centered")
 
-# スマホ対応のタイトル表示
+# タイトル（サイズ小さめに調整）
 st.markdown("""
-    <h1 style='font-size:28px; text-align:center;'>翻訳付き音声作成アプリ</h1>
+    <h1 style='font-size:24px; text-align:center;'>翻訳付き音声作成アプリ</h1>
 """, unsafe_allow_html=True)
 
-# 入力フォーム
-text = st.text_area("英語にしたい日本語を入力してください")
+# 入力欄
+text = st.text_area("しゃべらせたい日本語を入力してください")
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
 
-# ボタンを押したら実行
+# 実行ボタン
 if st.button("英語で音声を作る"):
     if text:
-        # 翻訳
         translator = Translator()
         translated = translator.translate(text, src='ja', dest='en')
         st.write("翻訳：", translated.text)
 
-        # 音声生成
         tts = gTTS(translated.text, lang='en')
         mp3_fp = BytesIO()
         tts.write_to_fp(mp3_fp)
@@ -32,7 +30,6 @@ if st.button("英語で音声を作る"):
         audio_data = mp3_fp.read()
         audio_base64 = base64.b64encode(audio_data).decode()
 
-        # JavaScriptで自動リピート再生
         js_code = f"""
         <script>
         var count = 0;
@@ -49,13 +46,9 @@ if st.button("英語で音声を作る"):
         </script>
         """
 
-        # 音声プレイヤー
         st.audio(audio_data, format="audio/mp3")
-
-        # JavaScript 埋め込み
         st.components.v1.html(js_code)
     else:
         st.warning("日本語を入力してください。")
-
 
 
