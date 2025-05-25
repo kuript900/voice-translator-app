@@ -42,4 +42,3 @@ if st.button("英語で音声を作る"):
     else:
         st.warning("日本語を入力してください。")
 
-
