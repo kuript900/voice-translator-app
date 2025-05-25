@@ -13,7 +13,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 入力欄
-text = st.text_area("しゃべらせたい日本語を入力してください")
+text = st.text_area("英語にしたい日本語を入力してください")
 repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1, step=1)
 
 # 実行ボタン
