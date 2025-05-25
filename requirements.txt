@@ -1,6 +1,5 @@
 streamlit
 gtts
-google_trans_new
-
+deep-translator
 
 
