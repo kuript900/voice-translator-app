@@ -1,6 +1,5 @@
 streamlit
-gtts
 deep-translator
-
+edge-tts
 
 
