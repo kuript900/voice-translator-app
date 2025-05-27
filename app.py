@@ -5,9 +5,8 @@ import asyncio
 import uuid
 import os
 import base64
-from pydub import AudioSegment
 
-# 言語設定（翻訳コード＋音声ボイスID）
+# 言語とTTSボイスの設定
 languages = {
     "日本語": ("ja", "ja-JP-NanamiNeural"),
     "英語": ("en", "en-US-JennyNeural"),
@@ -51,24 +50,19 @@ if st.button("翻訳して音声再生・ダウンロード"):
             translated = GoogleTranslator(source=src_code, target=tgt_code).translate(text)
             st.success(f"✅ 翻訳結果: {translated}")
 
-            base_filename = str(uuid.uuid4())
-            tmp_filename = f"{base_filename}_tmp.mp3"
-            final_filename = f"{base_filename}_final.mp3"
+            # テキストをリピート回数分つなげて読み上げ
+            repeated_text = (" " + translated) * repeat_count
+            filename = f"{uuid.uuid4()}.mp3"
 
-            asyncio.run(generate_audio(translated, voice, tmp_filename))
+            asyncio.run(generate_audio(repeated_text.strip(), voice, filename))
 
-            original = AudioSegment.from_file(tmp_filename, format="mp3")
-            repeated = original * repeat_count
-            repeated.export(final_filename, format="mp3")
-
-            with open(final_filename, "rb") as f:
+            with open(filename, "rb") as f:
                 audio_bytes = f.read()
                 st.audio(audio_bytes, format="audio/mp3")
 
-            st.markdown(get_audio_download_link(final_filename), unsafe_allow_html=True)
+            st.markdown(get_audio_download_link(filename), unsafe_allow_html=True)
 
-            os.remove(tmp_filename)
-            os.remove(final_filename)
+            os.remove(filename)
 
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {e}")
