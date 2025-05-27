@@ -6,7 +6,6 @@ import uuid
 import os
 import base64
 
-# 翻訳と言語コード・音声IDの対応表
 languages = {
     "日本語":  ("ja", "ja-JP-NanamiNeural"),
     "英語":    ("en", "en-US-JennyNeural"),
@@ -16,11 +15,9 @@ languages = {
     "ドイツ語": ("de", "de-DE-KatjaNeural")
 }
 
-# ページ設定
 st.set_page_config(page_title="翻訳＆音声リピートアプリ", layout="centered")
 st.title("🌐 多言語 翻訳 & 音声リピートアプリ")
 
-# 入力エリア
 text = st.text_input("翻訳する文章を入力してください")
 
 col1, col2 = st.columns(2)
@@ -33,15 +30,12 @@ repeat_count = st.number_input("🔁 自動再生の回数", min_value=1, max_va
 
 if st.button("翻訳して音声生成"):
     try:
-        # 言語コードと音声IDの取得
         src_code, _ = languages[src_lang]
         tgt_code, voice_id = languages[tgt_lang]
 
-        # 翻訳処理
         translated = GoogleTranslator(source=src_code, target=tgt_code).translate(text)
         st.success(f"翻訳結果：{translated}")
 
-        # 音声ファイル生成
         filename = f"{uuid.uuid4().hex}.mp3"
 
         async def generate_audio(text, voice, file):
@@ -50,13 +44,12 @@ if st.button("翻訳して音声生成"):
 
         asyncio.run(generate_audio(translated, voice_id, filename))
 
-        # ファイル読み込み・エンコード
         with open(filename, "rb") as f:
             audio_data = f.read()
             b64_audio = base64.b64encode(audio_data).decode()
 
-        # 再生ボタンとJavaScriptによる自動リピート
-        st.markdown("🔊 下のボタンで音声を指定回数自動再生できます：")
+        # 明示的な再生ボタン＋JSでループ再生
+        st.markdown("📱 下の再生ボタンを押してください（スマホ対応）")
 
         st.markdown(
             f"""
@@ -80,10 +73,9 @@ if st.button("翻訳して音声生成"):
             unsafe_allow_html=True
         )
 
-        # ダウンロードボタン
+        # ダウンロード
         st.download_button("🎧 音声をダウンロード", audio_data, file_name="translated.mp3")
 
-        # ファイル削除
         os.remove(filename)
 
     except Exception as e:
