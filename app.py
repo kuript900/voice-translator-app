@@ -1,45 +1,66 @@
-port streamlit as st
-from gtts import gTTS
+import streamlit as st
 from deep_translator import GoogleTranslator
-from io import BytesIO
-import base64
+import edge_tts
+import asyncio
+import uuid
+import os
 
-st.markdown("<h3 style='text-align: center;'>翻訳付き音声作成アプリ</h3>", unsafe_allow_html=True)
+# 翻訳対応言語（表示用とコードのマッピング）
+languages = {
+    "日本語": "ja",
+    "英語": "en",
+    "フランス語": "fr",
+    "スペイン語": "es",
+    "ポルトガル語": "pt",
+    "ドイツ語": "de"
+}
 
-text = st.text_area("しゃべらせたい日本語を入力してください")
-repeat_count = st.number_input("リピート回数（自動再生）", min_value=1, max_value=10, value=1)
+st.set_page_config(page_title="翻訳＆音声アプリ", layout="centered")
+st.title("🌐 多言語 翻訳 & 音声アプリ")
 
-if st.button("英語で音声を作る"):
-    if text:
-        # 翻訳
-        translated_text = GoogleTranslator(source='ja', target='en').translate(text)
-        st.write("翻訳：", translated_text)
+# 入力欄と言語選択
+text = st.text_input("翻訳する文章を入力してください")
 
-        # 音声生成
-        tts = gTTS(translated_text, lang='en')
-        mp3_fp = BytesIO()
-        tts.write_to_fp(mp3_fp)
-        mp3_fp.seek(0)
-        audio_data = mp3_fp.read()
-        audio_base64 = base64.b64encode(audio_data).decode()
+col1, col2 = st.columns(2)
+with col1:
+    src_lang = st.selectbox("翻訳元の言語", list(languages.keys()), index=0)
+with col2:
+    tgt_lang = st.selectbox("翻訳先の言語", list(languages.keys()), index=1)
 
-        # JavaScriptで自動再生
-        js_code = f"""
-        <script>
-        var count = 0;
-        var maxCount = {repeat_count};
-        var audio = new Audio("data:audio/mp3;base64,{audio_base64}");
-        audio.play();
-        audio.onended = function() {{
-            count++;
-            if (count < maxCount) {{
-                audio.currentTime = 0;
-                audio.play();
-            }}
-        }};
-        </script>
-        """
-        st.audio(audio_data, format="audio/mp3")
-        st.components.v1.html(js_code)
-    else:
-        st.warning("日本語を入力してください。")im
+# 実行ボタン
+if st.button("翻訳して音声再生＆ダウンロード"):
+    try:
+        # 翻訳処理
+        translated = GoogleTranslator(
+            source=languages[src_lang],
+            target=languages[tgt_lang]
+        ).translate(text)
+
+        st.success(f"翻訳結果：{translated}")
+
+        # 音声ファイル名生成
+        output_file = f"{uuid.uuid4().hex}.mp3"
+
+        # 非同期で音声生成（edge-tts）
+        async def create_audio(text, lang_code, filename):
+            communicate = edge_tts.Communicate(text, lang_code)
+            await communicate.save(filename)
+
+        asyncio.run(create_audio(translated, languages[tgt_lang], output_file))
+
+        # 再生とダウンロード
+        with open(output_file, "rb") as audio_file:
+            audio_bytes = audio_file.read()
+            st.audio(audio_bytes, format="audio/mp3")
+            st.download_button(
+                label="🎧 音声をダウンロード",
+                data=audio_bytes,
+                file_name="translated_audio.mp3",
+                mime="audio/mpeg"
+            )
+
+        os.remove(output_file)
+
+    except Exception as e:
+        st.error(f"エラーが発生しました: {e}")
+
