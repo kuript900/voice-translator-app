@@ -5,7 +5,6 @@ import asyncio
 import uuid
 import os
 import base64
-import time
 
 # 対応言語と音声ID
 languages = {
@@ -18,7 +17,7 @@ languages = {
 }
 
 st.set_page_config(page_title="翻訳＆音声アプリ", layout="centered")
-st.title("🌐 多言語 翻訳 & 音声アプリ")
+st.title("🌐 多言語 翻訳 & 自動音声リピートアプリ")
 
 text = st.text_input("翻訳する文章を入力してください")
 
@@ -28,9 +27,9 @@ with col1:
 with col2:
     tgt_lang = st.selectbox("翻訳先の言語", list(languages.keys()), index=1)
 
-repeat_count = st.number_input("🔁 リピート回数", min_value=1, max_value=5, value=1, step=1)
+repeat_count = st.number_input("🔁 自動再生の回数", min_value=1, max_value=10, value=1)
 
-if st.button("翻訳して音声再生＆ダウンロード"):
+if st.button("翻訳して自動再生＆ダウンロード"):
     try:
         src_code, _ = languages[src_lang]
         tgt_code, voice_id = languages[tgt_lang]
@@ -50,23 +49,31 @@ if st.button("翻訳して音声再生＆ダウンロード"):
             audio_data = f.read()
             b64 = base64.b64encode(audio_data).decode()
 
-            # リピート分オーディオ埋め込み
-            for i in range(repeat_count):
-                st.markdown(f"再生 {i+1} 回目：", unsafe_allow_html=True)
-                st.markdown(
-                    f"""
-                    <audio controls>
-                        <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
-                    </audio>
-                    """,
-                    unsafe_allow_html=True
-                )
+            st.markdown("🔊 自動再生中...")
 
-            # ダウンロードも可能
+            st.markdown(
+                f"""
+                <audio id="audioPlayer" src="data:audio/mp3;base64,{b64}" autoplay></audio>
+                <script>
+                    const audio = document.getElementById("audioPlayer");
+                    let count = 1;
+                    const maxCount = {int(repeat_count)};
+                    audio.onended = function() {{
+                        if (count < maxCount) {{
+                            count++;
+                            audio.play();
+                        }}
+                    }};
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
+
             st.download_button("🎧 音声をダウンロード", audio_data, file_name="translated.mp3")
 
         os.remove(filename)
 
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
+
 
