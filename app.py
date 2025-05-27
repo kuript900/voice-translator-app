@@ -7,7 +7,7 @@ import os
 import base64
 from pydub import AudioSegment
 
-# 言語設定
+# 言語設定（翻訳コード＋音声ボイスID）
 languages = {
     "日本語": ("ja", "ja-JP-NanamiNeural"),
     "英語": ("en", "en-US-JennyNeural"),
@@ -21,6 +21,7 @@ st.set_page_config(page_title="多言語翻訳＆音声アプリ", layout="cente
 st.title("🌍 多言語 翻訳 & 音声再生アプリ")
 
 text = st.text_input("翻訳する文章を入力してください")
+
 col1, col2 = st.columns(2)
 with col1:
     src_lang = st.selectbox("翻訳元の言語", list(languages.keys()), index=0)
@@ -71,5 +72,6 @@ if st.button("翻訳して音声再生・ダウンロード"):
 
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {e}")
+
 
 
