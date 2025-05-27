@@ -6,7 +6,7 @@ import uuid
 import os
 import base64
 
-# 対応言語と音声ID
+# 翻訳と言語コード・音声IDの対応表
 languages = {
     "日本語":  ("ja", "ja-JP-NanamiNeural"),
     "英語":    ("en", "en-US-JennyNeural"),
@@ -16,10 +16,11 @@ languages = {
     "ドイツ語": ("de", "de-DE-KatjaNeural")
 }
 
-st.set_page_config(page_title="翻訳＆自動リピート音声アプリ", layout="centered")
-st.title("🌐 多言語 翻訳 & 自動音声リピート")
+# ページ設定
+st.set_page_config(page_title="翻訳＆音声リピートアプリ", layout="centered")
+st.title("🌐 多言語 翻訳 & 音声リピートアプリ")
 
-# 入力・言語選択
+# 入力エリア
 text = st.text_input("翻訳する文章を入力してください")
 
 col1, col2 = st.columns(2)
@@ -28,55 +29,62 @@ with col1:
 with col2:
     tgt_lang = st.selectbox("翻訳先の言語", list(languages.keys()), index=1)
 
-repeat_count = st.number_input("🔁 自動再生回数", min_value=1, max_value=10, value=1)
+repeat_count = st.number_input("🔁 自動再生の回数", min_value=1, max_value=10, value=1)
 
-if st.button("翻訳・音声生成・自動再生"):
+if st.button("翻訳して音声生成"):
     try:
+        # 言語コードと音声IDの取得
         src_code, _ = languages[src_lang]
         tgt_code, voice_id = languages[tgt_lang]
 
+        # 翻訳処理
         translated = GoogleTranslator(source=src_code, target=tgt_code).translate(text)
         st.success(f"翻訳結果：{translated}")
 
+        # 音声ファイル生成
         filename = f"{uuid.uuid4().hex}.mp3"
 
-        async def create_audio(text, voice, filename):
+        async def generate_audio(text, voice, file):
             communicate = edge_tts.Communicate(text, voice)
-            await communicate.save(filename)
+            await communicate.save(file)
 
-        asyncio.run(create_audio(translated, voice_id, filename))
+        asyncio.run(generate_audio(translated, voice_id, filename))
 
+        # ファイル読み込み・エンコード
         with open(filename, "rb") as f:
-            audio_bytes = f.read()
-            b64 = base64.b64encode(audio_bytes).decode()
+            audio_data = f.read()
+            b64_audio = base64.b64encode(audio_data).decode()
 
-            st.markdown("🔊 指定回数だけ自動で再生されます")
+        # 再生ボタンとJavaScriptによる自動リピート
+        st.markdown("🔊 下のボタンで音声を指定回数自動再生できます：")
 
-            # JavaScriptで完全制御されたaudioタグと再生処理
-            st.markdown(
-                f"""
-                <script>
-                let count = 1;
-                let maxCount = {int(repeat_count)};
-                const audio = new Audio("data:audio/mp3;base64,{b64}");
-                audio.play();
+        st.markdown(
+            f"""
+            <audio id="audioPlayer" src="data:audio/mp3;base64,{b64_audio}"></audio>
+            <button onclick="startPlayback()">▶️ 再生スタート</button>
+            <script>
+                function startPlayback() {{
+                    const audio = document.getElementById("audioPlayer");
+                    let count = 1;
+                    const maxCount = {int(repeat_count)};
+                    audio.play();
+                    audio.onended = function() {{
+                        if (count < maxCount) {{
+                            count++;
+                            audio.play();
+                        }}
+                    }};
+                }}
+            </script>
+            """,
+            unsafe_allow_html=True
+        )
 
-                audio.addEventListener('ended', () => {{
-                    if (count < maxCount) {{
-                        count++;
-                        audio.play();
-                    }}
-                }});
-                </script>
-                """,
-                unsafe_allow_html=True
-            )
+        # ダウンロードボタン
+        st.download_button("🎧 音声をダウンロード", audio_data, file_name="translated.mp3")
 
-            st.download_button("🎧 音声をダウンロード", audio_bytes, file_name="translated.mp3")
+        # ファイル削除
         os.remove(filename)
 
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
-
-
-
