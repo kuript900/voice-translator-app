@@ -7,8 +7,8 @@ import os
 import base64
 
 languages = {
-    "日本語":  ("ja", "ja-JP-NanamiNeural"),
-    "英語":    ("en", "en-US-JennyNeural"),
+    "日本語": ("ja", "ja-JP-NanamiNeural"),
+    "英語": ("en", "en-US-JennyNeural"),
     "フランス語": ("fr", "fr-FR-DeniseNeural"),
     "スペイン語": ("es", "es-ES-ElviraNeural"),
     "ポルトガル語": ("pt", "pt-BR-FranciscaNeural"),
@@ -44,12 +44,17 @@ if st.button("翻訳して音声生成"):
 
         asyncio.run(generate_audio(translated, voice_id, filename))
 
+        # 音声ファイル読み込み
         with open(filename, "rb") as f:
             audio_data = f.read()
             b64_audio = base64.b64encode(audio_data).decode()
 
-        # 明示的な再生ボタン＋JSでループ再生
-        st.markdown("📱 下の再生ボタンを押してください（スマホ対応）")
+        # Streamlit標準のaudioでも再生可能にしておく（保険）
+        st.markdown("🧪 音声が再生されない場合、以下からも再生してみてください：")
+        st.audio(audio_data, format="audio/mp3")
+
+        # ボタンでリピート再生を実現
+        st.markdown("📱 再生ボタンを押すと指定回数だけ自動で再生されます：")
 
         st.markdown(
             f"""
