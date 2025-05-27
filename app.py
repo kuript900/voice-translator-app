@@ -5,9 +5,8 @@ import asyncio
 import uuid
 import os
 import base64
-import subprocess
 
-# 言語対応とVoice ID
+# 対応言語
 languages = {
     "日本語": ("ja", "ja-JP-NanamiNeural"),
     "英語": ("en", "en-US-JennyNeural"),
@@ -30,14 +29,6 @@ with col2:
 
 repeat_count = st.number_input("🔁 自動再生の回数", min_value=1, max_value=10, value=1)
 
-# ffmpeg でMP3をリピート結合する関数
-def repeat_audio_ffmpeg(input_file, repeat_count, output_file):
-    with open("concat_list.txt", "w") as f:
-        for _ in range(repeat_count):
-            f.write(f"file '{input_file}'\n")
-    subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "concat_list.txt", "-c", "copy", output_file], check=True)
-    os.remove("concat_list.txt")
-
 if st.button("翻訳して音声生成"):
     try:
         src_code, _ = languages[src_lang]
@@ -55,18 +46,25 @@ if st.button("翻訳して音声生成"):
 
         asyncio.run(generate_audio(translated, voice_id, temp_file))
 
-        # ffmpeg でリピート結合
-        repeat_audio_ffmpeg(temp_file, int(repeat_count), final_file)
+        # バイナリで結合（非推奨ながらmp3ならうまく動くことが多い）
+        with open(temp_file, "rb") as f:
+            audio_data = f.read()
+        repeated_audio = audio_data * int(repeat_count)
+
+        # 保存
+        with open(final_file, "wb") as f:
+            f.write(repeated_audio)
 
         with open(final_file, "rb") as f:
-            audio_data = f.read()
+            output_data = f.read()
 
-        st.audio(audio_data, format="audio/mp3")
-        st.download_button("🎧 音声をダウンロード", audio_data, file_name="translated.mp3")
+        st.audio(output_data, format="audio/mp3")
+        st.download_button("🎧 音声をダウンロード", output_data, file_name="translated.mp3")
 
         os.remove(temp_file)
         os.remove(final_file)
 
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
+
 
