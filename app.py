@@ -5,7 +5,7 @@ import asyncio
 import uuid
 import os
 import base64
-from pydub import AudioSegment
+import subprocess
 
 # 言語対応とVoice ID
 languages = {
@@ -30,11 +30,13 @@ with col2:
 
 repeat_count = st.number_input("🔁 自動再生の回数", min_value=1, max_value=10, value=1)
 
-def concatenate_audio(file_path: str, repeat_count: int, output_path: str):
-    original = AudioSegment.from_file(file_path, format="mp3")
-    combined = original * repeat_count
-    combined.export(output_path, format="mp3")
-    return output_path
+# ffmpeg でMP3をリピート結合する関数
+def repeat_audio_ffmpeg(input_file, repeat_count, output_file):
+    with open("concat_list.txt", "w") as f:
+        for _ in range(repeat_count):
+            f.write(f"file '{input_file}'\n")
+    subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "concat_list.txt", "-c", "copy", output_file], check=True)
+    os.remove("concat_list.txt")
 
 if st.button("翻訳して音声生成"):
     try:
@@ -53,18 +55,15 @@ if st.button("翻訳して音声生成"):
 
         asyncio.run(generate_audio(translated, voice_id, temp_file))
 
-        # 音声を結合して繰り返す
-        concatenate_audio(temp_file, int(repeat_count), final_file)
+        # ffmpeg でリピート結合
+        repeat_audio_ffmpeg(temp_file, int(repeat_count), final_file)
 
-        # 音声をバイナリで読み込み
         with open(final_file, "rb") as f:
             audio_data = f.read()
 
-        # 再生とダウンロード
         st.audio(audio_data, format="audio/mp3")
         st.download_button("🎧 音声をダウンロード", audio_data, file_name="translated.mp3")
 
-        # 一時ファイル削除
         os.remove(temp_file)
         os.remove(final_file)
 
